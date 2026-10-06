@@ -1,0 +1,361 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400;1,9..144,500;1,9..144,600&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap");
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────
+   THEME TOKENS — tweak the whole site here
+────────────────────────────────────────────── */
+@theme {
+  --color-void: #0b0c0f;
+  --color-panel: #10131a;
+  --color-ink: #ece9e1;
+  --color-mute: #8b909d;
+  --color-volt: #c9f542;
+  --color-line: rgba(236, 233, 225, 0.13);
+  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: "Instrument Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PALETTES
+   dark  → console obsidian + volt lime        (default)
+   light → cream paper + roasted espresso
+   Both expose the same variable names, so every utility, the WebGL
+   scenes and the SVG diagrams repaint from one switch.
+───────────────────────────────────────────────────────────── */
+:root,
+[data-theme="dark"] {
+  --color-void: #0b0c0f;
+  --color-panel: #10131a;
+  --color-ink: #ece9e1;
+  --color-mute: #8b909d;
+  --color-volt: #c9f542;
+  --color-line: rgba(236, 233, 225, 0.13);
+
+  --glow: rgba(201, 245, 66, 0.6);
+  --glow-soft: rgba(201, 245, 66, 0.1);
+  --scene-core: #14171f;
+  --scene-key: #d9ff62;
+  --scene-rim: #93a0b8;
+  --scene-schematic: #0d0f14;
+  --schematic-ink: #c9f542;
+  --grid-ink: rgba(236, 233, 225, 0.045);
+  --ghost-ink: rgba(236, 233, 225, 0.09);
+  --grain-opacity: 0.05;
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --color-void: #f2e9db;
+  --color-panel: #e8dac2;
+  --color-ink: #2b2016;
+  --color-mute: #6d5b45;
+  --color-volt: #96440f;
+  --color-line: rgba(43, 32, 22, 0.18);
+
+  --glow: rgba(150, 68, 15, 0.5);
+  --glow-soft: rgba(150, 68, 15, 0.12);
+  --scene-core: #d6c5a6;
+  --scene-key: #fff3dc;
+  --scene-rim: #8a7355;
+  --scene-schematic: #241a12;
+  --schematic-ink: #e0a45c;
+  --grid-ink: rgba(43, 32, 22, 0.05);
+  --ghost-ink: rgba(43, 32, 22, 0.12);
+  --grain-opacity: 0.085;
+  color-scheme: light;
+}
+
+body {
+  transition: background-color 0.55s var(--ease-out-expo), color 0.55s var(--ease-out-expo);
+}
+
+html {
+  scrollbar-color: #262b37 var(--color-void);
+}
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
+body {
+  background: var(--color-void);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection { background: var(--color-volt); color: var(--color-void); }
+
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: var(--color-void); }
+::-webkit-scrollbar-thumb { background: var(--color-panel); border: 3px solid var(--color-void); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-volt); }
+
+/* ── ambient layers: hairline grid + film grain ── */
+.bg-grid-layer {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(to right, var(--grid-ink) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-ink) 1px, transparent 1px);
+  background-size: 84px 84px;
+  -webkit-mask-image: radial-gradient(ellipse 100% 75% at 50% 0%, black 25%, transparent 100%);
+  mask-image: radial-gradient(ellipse 100% 75% at 50% 0%, black 25%, transparent 100%);
+}
+.noise-layer {
+  position: fixed; inset: -120px; z-index: 60; pointer-events: none; opacity: var(--grain-opacity, 0.05);
+  transition: opacity 0.5s ease;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain 1.1s steps(4) infinite;
+}
+@keyframes grain {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-24px, 18px); }
+  50% { transform: translate(14px, -30px); }
+  75% { transform: translate(-18px, -12px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* ── reveal system (JS adds .is-in when in view) ── */
+.rv {
+  opacity: 0; transform: translateY(26px);
+  transition: opacity 0.9s var(--ease-out-expo), transform 0.9s var(--ease-out-expo);
+  will-change: opacity, transform;
+}
+.rv.is-in { opacity: 1; transform: none; }
+
+.rv-line { display: block; overflow: hidden; }
+.rv-line > span { display: block; transform: translateY(112%); transition: transform 1.1s var(--ease-out-expo); }
+.is-in .rv-line > span { transform: none; }
+
+/* giant outlined ghost numerals behind sections */
+.ghost { color: transparent; -webkit-text-stroke: 1px var(--ghost-ink); user-select: none; }
+
+/* ── infinite marquee ── */
+.marquee { overflow: hidden; }
+.marquee-track { display: flex; width: max-content; animation: marquee-x 32s linear infinite; will-change: transform; }
+.marquee-reverse .marquee-track { animation-direction: reverse; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
+@keyframes marquee-x { to { transform: translateX(-50%); } }
+
+/* ── small signature keyframes ── */
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+.spin-slow { animation: spin-slow 14s linear infinite; }
+
+@keyframes pulse-soft { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.78); } }
+.dot-pulse { animation: pulse-soft 2s ease-in-out infinite; }
+
+/* looping volt segment travelling down the rails beside the hero name (opposite directions) */
+@keyframes rail-down {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { transform: translateY(1200%); opacity: 0; }
+}
+@keyframes rail-up {
+  0%   { transform: translateY(1200%); opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { transform: translateY(-100%); opacity: 0; }
+}
+.name-rail {
+  position: absolute;
+  top: -12px;
+  bottom: -12px;
+  width: 1px;
+  background: var(--color-line);
+  overflow: hidden;
+}
+.name-rail::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 1px;
+  height: 38px;
+  background: var(--color-volt);
+  box-shadow: 0 0 14px 2px rgba(201, 245, 66, 0.75);
+}
+.name-rail::after {
+  background: var(--color-volt);
+  box-shadow: 0 0 14px 2px var(--glow);
+}
+.name-rail--left::after {
+  top: 0;
+  animation: rail-down 3.2s var(--ease-out-expo) infinite;
+}
+.name-rail--right::after {
+  bottom: 0;
+  animation: rail-up 3.2s var(--ease-out-expo) infinite 0.6s;
+}
+
+/* ── edge-box: subtle looping perimeter-accent around major cards ── */
+.edge-box, .edge-box-rev {
+  position: relative;
+}
+.edge-box::before,
+.edge-box::after,
+.edge-box-rev::before,
+.edge-box-rev::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+  background: var(--color-volt);
+  opacity: 0.85;
+  box-shadow: 0 0 10px 1px var(--glow);
+}
+
+/* edge-box: top-horizontal moves right, right-vertical moves down */
+.edge-box::before {
+  top: -1px; left: 0; height: 1.5px; width: 44px;
+  animation: edge-sweep-h 4.2s ease-in-out infinite alternate;
+}
+.edge-box::after {
+  top: 0; right: -1px; width: 1.5px; height: 44px;
+  animation: edge-sweep-v 4.2s ease-in-out infinite alternate 1s;
+}
+
+/* edge-box-rev: bottom-horizontal moves left, left-vertical moves up (opposite direction) */
+.edge-box-rev::before {
+  bottom: -1px; right: 0; height: 1.5px; width: 44px;
+  animation: edge-sweep-h-rev 4.8s ease-in-out infinite alternate;
+}
+.edge-box-rev::after {
+  bottom: 0; left: -1px; width: 1.5px; height: 44px;
+  animation: edge-sweep-v-rev 4.8s ease-in-out infinite alternate 0.8s;
+}
+
+@keyframes edge-sweep-h {
+  0%   { left: 0; opacity: 0.3; }
+  50%  { opacity: 1; }
+  100% { left: calc(100% - 44px); opacity: 0.3; }
+}
+@keyframes edge-sweep-v {
+  0%   { top: 0; opacity: 0.3; }
+  50%  { opacity: 1; }
+  100% { top: calc(100% - 44px); opacity: 0.3; }
+}
+@keyframes edge-sweep-h-rev {
+  0%   { right: 0; opacity: 0.3; }
+  50%  { opacity: 1; }
+  100% { right: calc(100% - 44px); opacity: 0.3; }
+}
+@keyframes edge-sweep-v-rev {
+  0%   { bottom: 0; opacity: 0.3; }
+  50%  { opacity: 1; }
+  100% { bottom: calc(100% - 44px); opacity: 0.3; }
+}
+
+@keyframes cue { 0% { transform: translateY(-100%); } 60% { transform: translateY(100%); } 100% { transform: translateY(100%); } }
+.scroll-cue { position: relative; overflow: hidden; }
+.scroll-cue::after { content: ""; position: absolute; inset: 0; background: var(--color-volt); animation: cue 1.9s var(--ease-out-expo) infinite; }
+
+/* volt underline that draws itself on reveal */
+.draw-underline { position: relative; display: inline-block; white-space: nowrap; }
+.draw-underline svg { position: absolute; left: -2%; bottom: -0.14em; width: 104%; height: 0.3em; overflow: visible; }
+.draw-underline path {
+  stroke: var(--color-volt); stroke-width: 2.5; fill: none; stroke-linecap: round;
+  stroke-dasharray: 320; stroke-dashoffset: 320;
+  transition: stroke-dashoffset 1.4s var(--ease-out-expo) 0.55s;
+}
+.is-in .draw-underline path { stroke-dashoffset: 0; }
+
+/* ── custom cursor (only mounted for fine pointers) ── */
+html.has-cursor, html.has-cursor * { cursor: none !important; }
+.cursor-dot, .cursor-ring { position: fixed; top: 0; left: 0; z-index: 100; pointer-events: none; border-radius: 9999px; }
+.cursor-dot { width: 6px; height: 6px; background: var(--color-volt); }
+.cursor-ring {
+  width: 34px; height: 34px; border: 1px solid var(--glow);
+  transition: width 0.3s ease, height 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+}
+.cursor-ring.is-hover { width: 58px; height: 58px; border-color: var(--color-volt); background: var(--glow-soft); }
+
+/* ── vertical pin (slides step in place; page always owns scroll) ── */
+.pin-stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+.pin-slide {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  will-change: transform;
+}
+.pin-slide-inner {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1.25rem 2rem;
+  transition: opacity 0.45s ease;
+  will-change: transform;
+}
+@media (min-width: 768px) {
+  .pin-slide-inner { padding: 2.5rem 3rem 2.5rem; }
+}
+@media (min-width: 1280px) {
+  .pin-slide-inner { padding: 2.5rem 4rem; }
+}
+
+/* ── project schematic frame ── */
+.schematic-frame {
+  position: relative;
+  border: 1px solid var(--color-line);
+  background: var(--scene-schematic);
+}
+/* warm the diagrams toward espresso in the light palette */
+[data-theme="light"] .schematic-img {
+  filter: sepia(0.6) saturate(1.15) hue-rotate(-12deg) contrast(1.02) brightness(0.92);
+}
+[data-theme="light"] .noise-layer { mix-blend-mode: multiply; }
+
+/* auto-diagrams draw in the palette's schematic ink */
+.schematic-ink { color: var(--schematic-ink); }
+.schematic-frame::before,
+.schematic-frame::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: var(--color-volt);
+  z-index: 2;
+  pointer-events: none;
+}
+.schematic-frame::before {
+  top: -1px; left: -1px;
+  border-top: 1.5px solid; border-left: 1.5px solid;
+}
+.schematic-frame::after {
+  bottom: -1px; right: -1px;
+  border-bottom: 1.5px solid; border-right: 1.5px solid;
+}
+.schematic-img {
+  transition: transform 1.2s var(--ease-out-expo), filter 0.6s ease;
+  filter: saturate(0.92) contrast(1.04);
+}
+.group:hover .schematic-img { transform: scale(1.04); filter: saturate(1.05) contrast(1.08); }
+.schematic-scan {
+  position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 3px,
+    var(--glow-soft) 4px
+  );
+  mix-blend-mode: screen;
+}
+
+/* ── respect reduced motion: freeze all decorative movement ── */
+@media (prefers-reduced-motion: reduce) {
+  .noise-layer, .spin-slow, .dot-pulse, .scroll-cue::after, .marquee-track,
+  .name-rail::after, .edge-box::before, .edge-box::after,
+  .edge-box-rev::before, .edge-box-rev::after { animation: none !important; }
+  .rv, .rv-line > span { transition: none; opacity: 1; transform: none; }
+  .draw-underline path { stroke-dashoffset: 0; transition: none; }
+  html.has-cursor, html.has-cursor * { cursor: auto !important; }
+  .pin-track { transform: none !important; }
+}
